@@ -1,0 +1,71 @@
+# Soil Fertility Prediction App (Streamlit-based)
+
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ----------------------------
+# Fertility Detection Function
+# ----------------------------
+def check_fertility(n, p, k, ph):
+    score = 0
+    if 20 <= n <= 50: score += 1
+    if 20 <= p <= 40: score += 1
+    if 100 <= k <= 150: score += 1
+    if 6.0 <= ph <= 7.5: score += 1
+
+    if score == 4:
+        return "High fertility"
+    elif score >= 2:
+        return "Medium fertility"
+    else:
+        return "Low fertility"
+
+# ----------------------------
+# Crop Recommendation
+# ----------------------------
+def recommend_crop(fertility):
+    if fertility == "High fertility":
+        return ["Maize", "Wheat", "Rice"]
+    elif fertility == "Medium fertility":
+        return ["Millet", "Sorghum", "Barley"]
+    else:
+        return ["Legumes", "Green Manure", "Soil treatment advised"]
+
+# ----------------------------
+# Streamlit App Layout
+# ----------------------------
+st.title("🌱 Soil Fertility Detector")
+st.markdown("Enter your soil parameters to check fertility and get crop suggestions.")
+
+# Input Form
+with st.form("soil_form"):
+    n = st.number_input("Nitrogen (N) ppm", min_value=0.0, max_value=100.0, value=30.0)
+    p = st.number_input("Phosphorus (P) ppm", min_value=0.0, max_value=100.0, value=30.0)
+    k = st.number_input("Potassium (K) ppm", min_value=0.0, max_value=200.0, value=120.0)
+    ph = st.number_input("Soil pH", min_value=3.0, max_value=10.0, value=6.5)
+    submit = st.form_submit_button("Analyze")
+
+# Analyze Inputs
+if submit:
+    fertility = check_fertility(n, p, k, ph)
+    crops = recommend_crop(fertility)
+
+    st.subheader(f"🧪 Fertility Level: {fertility}")
+    st.write("### 🌾 Recommended Crops:")
+    for crop in crops:
+        st.write(f"- {crop}")
+
+    # Visual
+    st.write("### 📊 Nutrient Levels")
+    df = pd.DataFrame({
+        'Nutrient': ['Nitrogen', 'Phosphorus', 'Potassium', 'pH'],
+        'Value': [n, p, k, ph]
+    })
+    fig, ax = plt.subplots()
+    ax.bar(df['Nutrient'], df['Value'], color='skyblue')
+    ax.set_ylabel("Level")
+    st.pyplot(fig)
+
+st.markdown("---")
+st.caption("Developed with ❤️ using Streamlit")
