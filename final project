@@ -1,0 +1,142 @@
+# COVID-19 Global Data Tracker
+
+# ================================
+# 📦 1. Data Collection
+# ================================
+# Dataset: https://covid.ourworldindata.org/data/owid-covid-data.csv
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+
+# Set display and style options
+pd.set_option('display.max_columns', None)
+sns.set(style="whitegrid")
+
+# Load the dataset
+df = pd.read_csv("owid-covid-data.csv")
+
+# ================================
+# 🔍 2. Data Exploration
+# ================================
+print("\nColumns:", df.columns.tolist())
+print("\nData types:\n", df.dtypes)
+print("\nMissing values:\n", df.isnull().sum())
+print("\nData preview:\n", df.head())
+
+# ================================
+# 🧹 3. Data Cleaning
+# ================================
+# Filter countries of interest
+countries = ["Kenya", "United States", "India"]
+df = df[df['location'].isin(countries)]
+
+# Convert 'date' to datetime
+df['date'] = pd.to_datetime(df['date'])
+
+# Fill missing numeric values with forward fill
+df = df.sort_values(by=['location', 'date'])
+df[['total_cases', 'total_deaths', 'new_cases', 'new_deaths', 'total_vaccinations']] = \
+    df[['total_cases', 'total_deaths', 'new_cases', 'new_deaths', 'total_vaccinations']].fillna(method='ffill')
+
+# Drop any remaining rows with missing key values
+df = df.dropna(subset=['total_cases', 'total_deaths'])
+
+# ================================
+# 📈 4. Exploratory Data Analysis (EDA)
+# ================================
+# 4.1 Total cases over time
+plt.figure(figsize=(12, 6))
+for country in countries:
+    country_data = df[df['location'] == country]
+    plt.plot(country_data['date'], country_data['total_cases'], label=country)
+plt.title('Total COVID-19 Cases Over Time')
+plt.xlabel('Date')
+plt.ylabel('Total Cases')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# 4.2 Total deaths over time
+plt.figure(figsize=(12, 6))
+for country in countries:
+    country_data = df[df['location'] == country]
+    plt.plot(country_data['date'], country_data['total_deaths'], label=country)
+plt.title('Total COVID-19 Deaths Over Time')
+plt.xlabel('Date')
+plt.ylabel('Total Deaths')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# 4.3 Daily new cases (7-day rolling avg)
+plt.figure(figsize=(12, 6))
+for country in countries:
+    country_data = df[df['location'] == country]
+    rolling = country_data['new_cases'].rolling(7).mean()
+    plt.plot(country_data['date'], rolling, label=country)
+plt.title('Daily New Cases (7-day average)')
+plt.xlabel('Date')
+plt.ylabel('New Cases')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# 4.4 Death rate
+latest = df.groupby('location').last().reset_index()
+latest['death_rate'] = latest['total_deaths'] / latest['total_cases']
+sns.barplot(data=latest, x='location', y='death_rate')
+plt.title('COVID-19 Death Rate by Country')
+plt.ylabel('Death Rate')
+plt.show()
+
+# ================================
+# 💉 5. Vaccination Analysis
+# ================================
+plt.figure(figsize=(12, 6))
+for country in countries:
+    country_data = df[df['location'] == country]
+    plt.plot(country_data['date'], country_data['total_vaccinations'], label=country)
+plt.title('Total Vaccinations Over Time')
+plt.xlabel('Date')
+plt.ylabel('Total Vaccinations')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# ================================
+# 🗺️ 6. Choropleth Map (Optional)
+# ================================
+# Create latest snapshot for all countries
+world_df = pd.read_csv("owid-covid-data.csv")
+latest_world = world_df.sort_values('date').groupby('location').last().reset_index()
+
+# Drop aggregates and keep ISO codes
+latest_world = latest_world[latest_world['iso_code'].str.len() == 3]
+
+fig = px.choropleth(
+    latest_world,
+    locations="iso_code",
+    color="total_cases",
+    hover_name="location",
+    color_continuous_scale="Reds",
+    title="Total COVID-19 Cases by Country"
+)
+fig.show()
+
+# ================================
+# 📝 7. Key Insights
+# ================================
+# Markdown suggestions (for use in notebook cells):
+# - India had the highest total number of cases among the selected countries.
+# - The US experienced multiple major waves of new daily cases.
+# - Kenya’s vaccination rollout lagged behind but followed a steady pace.
+# - Death rates vary significantly between countries, indicating differing healthcare responses.
+
+# ================================
+# 📤 Export
+# ================================
+# To export: File > Download as > PDF via LaTeX or HTML
+
+# End of COVID-19 Global Data Tracker
